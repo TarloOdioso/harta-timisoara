@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Harta sinagogilor din Timișoara</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <style>
+    body, html { height: 100%; margin: 0; font-family: Arial, Helvetica, sans-serif; }
+    #map { position: absolute; top: 0; right: 0; bottom: 0; left: 450px; }
+    #sidebar { position: absolute; left: 0; top: 0; bottom: 0; width: 430px; overflow:auto; padding: 16px; box-shadow: 2px 0 6px rgba(0,0,0,0.1); background: #fff; }
+    .place { padding: 10px; border-bottom: 1px solid #111ed0; cursor: pointer; }
+    .place h3 { margin: 0 0 6px 0; font-size: 16px; }
+    .place p { margin: 0; font-size: 13px; color: #444; }
+    .controls { margin-bottom: 12px; }
+    .credits { font-size: 12px; color: #666; margin-top: 10px; }
+    img.thumb { max-width: 100%; height: auto; border-radius: 4px; margin-top:8px }
+    .logo {display: block; width: 170px; margin: 0 auto 10px auto; border-radius: 8px;}
+    .emoji-marker {text-align: center; line-height: 30px;}
+    .leaflet-control.legend {background: white; padding: 10px 14px; border-radius: 8px; font-size: 14px; line-height: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);}
+    .legend-item {display: flex; align-items: center; margin-bottom: 5px;}
+    .legend-item span {font-size: 20px; margin-right: 6px;}
+
+
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+     <img src="sigla.jpg.png" alt="Sigla proiectului" class="logo">
+    <h2>Jewish Cultural Heritage from Timisoara</h2>
+    <div class="controls">
+      <small>Click on a place or pin on the map for details.</small>
+    </div>
+
+    <div id="list"></div>
+
+    <div class="credits">
+
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+  
+      if (typeof L === 'undefined') {
+        alert('Eroare: Leaflet nu s-a încărcat corect. Verifică conexiunea la internet.');
+        return;
+      }
+
+      const synagogues = [
+        {
+          id: 'cetate',
+          title: 'Cetate Synagogue (Sinagoga din Cetate)',
+          coords: [45.756496, 21.226028],
+          description: '<p>The synagogue in the Cetate neighborhood is a Jewish place of worship built between 1863-1865, in an eclectic style with Moorish elements, according to the plans of the architect Karl Schumann from Vienna.</p><p> The synagogue was inaugurated on September 19, 1865, being reopened in 1872.</p> <p>After the mass emigration of the Jews, the synagogue was closed.</p> <p>It was reopened in September 2005, on the occasion of a concert organized by the Timisoara Philharmonic Society.</p><p> Currently, the Federation of Jewish Communities in Romania administers the synagogue again, in May 2022 it will be reopened to the public following extensive restoration work.</p>',
+          img: 'https://spotlight-timisoara.eu/wp-content/uploads/2022/06/sinagogaCetatenew2.jpg'
+        },
+        {
+          id: 'fabric',
+          title: 'Fabric Synagugue (Sinagoga din Fabric)',
+          coords: [45.756348, 21.245321],
+          description: '<p>The new synagogue in Fabric was built by the powerful Status quo ante mosaic community in 1899.</p><p> This building with a high dome and two towers, was built in the Moorish style and was located in an urban context foreign to us today, on the bank of a branch of the Bega canal that was later covered to become a street.</p><p>The synagogue was designed by the architect Leopold Baumhorn.</p><p>On September 3, 1899, on the eve of the Jewish New Year, the inauguration festivities took place, in the presence of the mayor of Timisoara, Dr. Karl Telbisz and Rabbi Jakab Singer.</p>',
+          img: 'https://timisoara2023.eu/images/4lomNNZOvaB6tmF9is20rNKJjfw=/5079/width-1600%7Cformat-webp/1d1a9c91-0e8f-472b-8d9c-38a6f211e90a'
+        },
+        {
+          id: 'iosefin',
+          title: 'Iosefin Synagogue (Sinagoga din Iosefin)',
+          coords: [45.744, 21.212],
+          description: '<p>Located on the current Luliu Maniu street, the synagogue in Losefin, also built in a style with Moorish influences, was inaugurated in 1910 and has much more modest dimensions than those in Cetate and Fabric, being of a much lower height.</p><p>In the courtyard of the synagogue, in the first years of its existence, a kindergarten and a Jewish primary school functioned.</p><p> Currently, it is the only synagogue in Timișoara where services are still held and the Bar Mitzvah ceremony takes place here, where boys who have turned 13 become adults.</p>',
+          img: 'https://spotlight-timisoara.eu/wp-content/uploads/2019/10/sinagoga_001.jpg'
+        },
+        {id:'cvartal',
+          title:'The Jewish Quarter (Cvartalul Evreiesc)',
+          coords:[45.756974, 21.225936],
+          description:'<p>The Jewish quarter is linked to the beginnings of the Jewish community in Timișoara</p><p>During the Ottoman occupation (1552-1716), Sephardic (Spanish) Jews settled in Timișoara.</p><p>They are the descendants of the Jews expelled by the Inquisition from Spain and Portugal, who settled in Constantinople or Thessaloniki.</p><p>The Turkish administration ended in 1716, when Eugeniu de Savoya, commander of the Habsburg troops, conquered the city.</p><p>Rascians, Greeks, Jews, Armenians and Gypsies have the right to remain in the city that passes under Austrian administration.</p><p>The small community of Jews with the status of tolerated is assigned a delimited area in the city, where the Judencarré (Jewish quarter) is established.</p>',
+          img:'https://merg.in/thumbs/facebook/2015/05/15/casa-printul-eugen-1339.jpgs'
+        },
+        {
+          id:'bancascont',
+          title:'Banca De Scont',
+          coords:[45.757538, 21.228017],
+          description:'<p>The Southern Hungarian Discount Bank, a banking institution established in 1906, operated in the Miksa Steiner Palace during the pre-war period.</p>',
+          img:'https://spotlight-timisoara.eu/wp-content/uploads/2022/06/bancaScontnew3.jpg'
+        },
+        {
+          id:'palatcomunitate',
+          title:'The Jewish Community Timisoara',
+          coords:[45.757676, 21.226224],
+          description:'<p>The Palace of the Jewish Community was designed by the Hungarian architect Lipot Baumhorn, at the beginning of the 1900s, in the Art Nouveau - Secession style.</p>',
+          img:'https://ghidulbanatului.ro/wp-content/uploads/2024/10/462075880_10161458431537324_8679591697826778021_n-1536x1152.jpg'
+        },
+        {
+          id:'weiss',
+          title:'Weiss Palace',
+          coords:[45.754112, 21.225158],
+          description:'<p>The Weiss Palace is a historic building in the center of Timisoara, in Piața Victoriei, built in 1921 by the Arnold Merbl firm in an eclectic style for the Weiss family, according to the plans of Adalbert Szladek.</p>',
+          img:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Palatul_Weiss.jpg/1280px-Palatul_Weiss.jpg'
+        },
+        {
+          id:'Bruck',
+          title:'House of Brück',
+          coords:[45.757568, 21.228869],
+          description:'<p>House of Brück is a building in Piața Unirii in Timișoara, a building built in 1910 according to the plans of the architect László Székely in the Art Nouveau and Secession styles, with a slightly eclectic character.</p>',
+          img:'https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Casa_Br%C3%BCck%2C_Pia%C8%9Ba_Unirii%2C_Timi%C8%99oara_%282023%29_-_IMG_01.jpg/800px-Casa_Br%C3%BCck%2C_Pia%C8%9Ba_Unirii%2C_Timi%C8%99oara_%282023%29_-_IMG_01.jpg'
+        },
+        {
+          id:'Loeffler',
+          title:'Loeffler Palace',
+          coords:[45.753232, 21.225787],
+          description:'<p>The Löffler Palace is a historic building in the center of Timisoara, in Piața Victoriei, built between 1912 - 1913 by the Löffler family and company, according to the plans of Henrik Telkes.</p>',
+          img:'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Timi%C8%99oara_-_Palatul_L%C3%B6ffler_%2843096206240%29.jpg/1280px-Timi%C8%99oara_-_Palatul_L%C3%B6ffler_%2843096206240%29.jpg',
+        },
+        {
+          id:'Marschall',
+          title:'Marschall Palace',
+          coords:[45.749201, 21.220182],
+          description:'<p>The Franz (Ferencz) Marschall Palace is a monumental building, built in 1904, located on Splaiul Tudor Vladimirescu, at the entrance from the city center to the Elisabetin neighborhood in Timișoara. It is part of the "Vechiul Cartier Iosefin" urban site.</p>',
+          img:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Marschall_Palace_2024_%281%29.jpg/1280px-Marschall_Palace_2024_%281%29.jpg'
+        },
+        {
+          id:'Hilt',
+          title:'Vogel Hilt',
+          coords:[45.751946, 21.224498],
+          description:'<p>László Székely is the architect who also designed the Hilt-Vogel palace in Piata Victoriei. The building was erected between 1912-1913. The building was designed next to another building-monument: the Széchenyi Palace, planned and built by the same architect.</p>',
+          img:'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Palatul_Hilt-Vogel.jpg/1280px-Palatul_Hilt-Vogel.jpg'
+        },
+
+        {
+          id: 'neuhausz',
+          title:'Neuhausz Palace (Palatul Neuhausz)',
+          coords: [45.753187, 21.225232],
+          description:'<p>The Neuhausz Palace was owned by Bernat Farber, the owner of a textile shop in the Fabric district and a member of the leadership of the Jewish community in Cetate and Fabric after their union in 1935. </p><p>Eugen Farber, Bernat son, was the owner of a varnish and paint factory in Timisoara, Fabrica Azur. With the establishment of the communist regime, it was expropriated.</p><p>He managed to escape from Romania to Hungary in a hay wagon. After 1989, John J. Farber claimed the right to the property and negotiated with the Romanian state the acquisition of the majority stake of Azur SA.</p><p>In 2013, John J. Farber was included in the Forbes 400, that is, among the top 400 richest Americans, one of 39 Americans born outside the United States of America on this list.</p> ',
+          img:'https://upload.wikimedia.org/wikipedia/commons/3/3a/Timisoara%2C_Palatul_Neuhausz_2022_%281%29.jpg'
+        },
+        
+      {
+        id:'dauerbach',
+        title:'Dauerbach Palace (Palatul Dauerbach)',
+        coords:[45.752555, 21.224892],
+        description:'<p>The Dauerbach Palace, also known as the Palace, is a historic building in the center of Timișoara, in Victoriei Square, built in 1913 in the Art Nouveau style for Georg Dauerbach, according to the plans of the architect László Székely.</p>',
+        img:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Dauerbach-Palais.JPG/1280px-Dauerbach-Palais.JPG'
+      },
+      
+      {
+        id:'neumann',
+        title:'Neumann Palace from Arad (Palatul Neumann din Arad)',
+        coords:[46.175444, 21.317753],
+        description:'<p>Neuman Palace is a building located on Revoluției Boulevard, in the municipality of Arad. It was built between 1891-1892 at the behest of the industrialist Neuman family.</p>',
+        img:'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Arad_-_Palatul_Neumann_%282023%29_-_img_05.jpg/1280px-Arad_-_Palatul_Neumann_%282023%29_-_img_05.jpg'
+      },
+      {
+        id:'spirt&drojdie',
+        title:'Arad Rubbing Alcohol and Yeast Factory',
+        coords:[46.201324, 21.285412],
+        description:'<p>The Arad Rubbing Alcohol and Yeast Factory was founded in 1851 by Adolf Neuman, who came from Bohemia. After two major fires, the current building, the most modern factory of the time in southeastern Europe, was completed in 1884. A mill and a pig farm also operated nearby. The installations remained functional for over a hundred years, being dismantled only after 1990. The factory and the mill were transformed into a joint-stock company in 1922, remaining in the ownership of the Neuman family until the nationalization in 1948.</p>',
+        img:'https://provinciacrisana.wordpress.com/wp-content/uploads/2017/09/43_big.jpg?w=474'
+      },
+      {
+        id:'stadion',
+        title:'Francis Neuman Stadium ',
+        coords:[46.192044, 21.310790],
+        description:'<p>Francisc Neuman Stadium, also known as UTA ​​Stadium, is a football stadium in Arad, Romania. It is built on the site of the former Francisc von Neuman Stadium.</p>',
+        img:'https://wesports-post.fra1.cdn.digitaloceanspaces.com/1597671574742'
+      }
+      ];
+
+      const map = L.map('map').setView([45.75, 21.23], 13);
+const legend = L.control({ position: "bottomright" });
+
+legend.onAdd = function () {
+  const div = L.DomUtil.create("div", "legend leaflet-control");
+  div.innerHTML = `
+    <div class="legend-item"><span>🕍</span> Synagogue</div>
+    <div class="legend-item"><span>🏛️</span> Palace</div>
+    <div class="legend-item"><span>💰</span> Bank</div>
+    <div class="legend-item"><span>🏭</span> Factory</div>
+    <div class="legend-item"><span>🏠</span> Community Building</div>
+    <div class="legend-item"><span>🏟️</span> Stadium</div>
+    <div class="legend-item"><span>🕎</span> Jew Quarter</div>
+  `;
+  return div;
+};
+legend.addTo(map);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      const markers = {};
+      const listEl = document.getElementById('list');
+
+
+function getEmojiIcon(emoji) {
+  return L.divIcon({
+    html: `<div style="font-size:26px;">${emoji}</div>`,
+    className: "emoji-marker",
+    iconSize: [30, 30],
+    iconAnchor: [15, 30],
+    popupAnchor: [0, -30]
+  });
+}
+
+      synagogues.forEach(s => {
+
+
+if (s.title.includes("Sinagoga")) emoji = "🕍";
+else if (s.title.includes("Palace") || s.title.includes("Palatul")) emoji = "🏛️";
+else if (s.title.includes("Vogel") || s.title.includes("Vogel Hilt")) emoji = "🏛️";
+else if (s.title.includes("House") || s.title.includes("House of Brück")) emoji = "🏛️";
+else if (s.title.includes("Banca")) emoji = "💰";
+else if (s.title.includes("Jewish Community")) emoji = "🏠";
+else if (s.title.includes("Factory") || s.title.includes("Fabr")) emoji = "🏭";
+else if (s.title.includes("Stadium")) emoji = "🏟️";
+else if (s.title.includes("Quarter")) emoji = "🕎";
+
+const marker = L.marker(s.coords, { icon: getEmojiIcon(emoji) }).addTo(map);
+
+        const popupHtml = `
+          <div style="min-width:200px">
+            <strong>${s.title}</strong>
+            <p>${s.description}</p>
+            ${s.img ? `<img class='thumb' src='${s.img}' alt='${s.title}'>` : ''}
+          </div>`;
+        marker.bindPopup(popupHtml);
+        markers[s.id] = marker;
+
+        const item = document.createElement('div');
+        item.className = 'place';
+        item.innerHTML = `<h3>${s.title}</h3><p>${s.description}</p>`;
+        item.addEventListener('click', () => {
+          map.setView(s.coords, 16);
+          marker.openPopup();
+        });
+        listEl.appendChild(item);
+      });
+    });
+  </script>
+</body>
+</html>
